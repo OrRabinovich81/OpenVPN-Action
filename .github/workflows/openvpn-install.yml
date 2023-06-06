@@ -33,5 +33,8 @@ jobs:
         # Start OpenVPN service
         sudo systemctl start openvpn@client
 
-        # Enable OpenVPN service on startup
-        sudo systemctl enable openvpn@client
+        # Check service status
+        sudo systemctl status openvpn@client.service
+
+        # Display service logs
+        sudo journalctl -xeu openvpn@client.service
