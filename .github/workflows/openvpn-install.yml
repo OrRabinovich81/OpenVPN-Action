@@ -1,0 +1,34 @@
+name: Install OpenVPN
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up OpenVPN
+      run: |
+        # Install OpenVPN and other dependencies
+        sudo apt-get update
+        sudo apt-get install -y openvpn
+
+        # Download OpenVPN config file
+        wget -O /etc/openvpn/client.conf ${{ secrets.OPENVPN_CONFIG_LINK }}
+
+        # Write OpenVPN login credentials
+        sudo tee /etc/openvpn/login.txt > /dev/null <<EOT
+        ${{ secrets.OPENVPN_USERNAME }}
+        ${{ secrets.OPENVPN_PASSWORD }}
+        EOT
+
+        # Start OpenVPN service
+        sudo systemctl start openvpn@client
+
+        # Enable OpenVPN service on startup
+        sudo systemctl enable openvpn@client
