@@ -19,13 +19,16 @@ jobs:
         sudo apt-get install -y openvpn
 
         # Download OpenVPN config file
-        wget -O /etc/openvpn/client.conf ${{ secrets.OPENVPN_CONFIG_LINK }}
+        wget -O $HOME/client.conf ${{ secrets.OPENVPN_CONFIG_LINK }}
 
         # Write OpenVPN login credentials
-        sudo tee /etc/openvpn/login.txt > /dev/null <<EOT
+        sudo tee $HOME/login.txt > /dev/null <<EOT
         ${{ secrets.OPENVPN_USERNAME }}
         ${{ secrets.OPENVPN_PASSWORD }}
         EOT
+
+        # Modify permissions of client.conf
+        sudo chmod 600 $HOME/client.conf
 
         # Start OpenVPN service
         sudo systemctl start openvpn@client
