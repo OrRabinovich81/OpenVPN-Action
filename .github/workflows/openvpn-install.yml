@@ -1,40 +1,30 @@
-name: Install OpenVPN
+name: connectVPN
 on:
-  push:
-    branches:
-      - main
-
+  workflow_dispatch:
 jobs:
-  build:
+  connect:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Set up OpenVPN
-      run: |
-        # Install OpenVPN and other dependencies
-        sudo apt-get update
-        sudo apt-get install -y openvpn
-
-        # Download OpenVPN config file
-        wget -O $HOME/client.conf ${{ secrets.OPENVPN_CONFIG_LINK }}
-
-        # Write OpenVPN login credentials
-        sudo tee $HOME/login.txt > /dev/null <<EOT
-        ${{ secrets.OPENVPN_USERNAME }}
-        ${{ secrets.OPENVPN_PASSWORD }}
-        EOT
-
-        # Modify permissions of client.conf
-        sudo chmod 600 $HOME/client.conf
-
-        # Start OpenVPN service
-        sudo systemctl start openvpn@client
-
-        # Check service status
-        sudo systemctl status openvpn@client.service
-
-        # Display service logs
-        sudo journalctl -xeu openvpn@client.service
+      - name: Write VPN Files
+        run: |
+          mkdir -p $HOME/.github/vpn
+          echo "--daemon" > $HOME/.github/vpn/vpn.ovpn
+          wget -O $HOME/.github/vpn/vpn.ovpn ${{ secrets.OPENVPN_CONFIG_LINK }}
+          ls -al $HOME/.github/vpn/vpn.ovpn
+      - name: Install openvpn3
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apt-transport-https
+          sudo wget -O /etc/apt/trusted.gpg.d/openvpn3.gpg https://swupdate.openvpn.net/repos/openvpn-repo-pkg-key.pub
+          echo "deb https://swupdate.openvpn.net/community/openvpn3/repos/openvpn3-$(lsb_release -cs) $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/openvpn3.list
+          sudo apt-get update
+          sudo apt-get install -y openvpn3
+      - name: VPN Connect
+        run: |
+          ls -al $HOME/.github/vpn
+          echo -e "${{ secrets.VPN_USERNAME }}\n${{ secrets.VPN_PASSWORD }}" | sudo openvpn3 session-start --config $HOME/.github/vpn/vpn.ovpn
+          sleep 120
+          curl icanhazip.com
+      - name: Kill VPN Connection
+        run: |
+          sudo pkill openvpn
